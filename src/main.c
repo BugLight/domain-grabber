@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <curl/curl.h>
 // TODO: autotools
@@ -25,17 +26,22 @@ int main(int argc, char **argv)
     const char *help = "Usage: dgrabber [options...]\n"
                        "Options:\n"
                        "-o  Output path\n"
+                       "-v  Verbose output\n"
                        "-h  This help text\n";
     char *output_path = NULL;
+    bool verbose = false;
 
     char c;
-    const char *optstring = ":o:h";
+    const char *optstring = ":o:hv";
     while ((c = getopt(argc, argv, optstring)) != -1)
     {
         switch (c)
         {
             case 'o':
                 output_path = strdup(optarg);
+                break;
+            case 'v':
+                verbose = true;
                 break;
             case 'h':
                 puts(help);
@@ -76,9 +82,21 @@ int main(int argc, char **argv)
     }
     while (domain.top != 0)
     {
+        if (verbose)
+        {
+            printf("Pending %s.%s...\t", domain.items, TLD);
+        }
         if (domain_available(curl, domain.items, TLD))
         {
             fprintf(fout, "%s\n", domain.items);
+            if (verbose)
+            {
+                printf("available\n");
+            }
+        }
+        else if (verbose)
+        {
+            printf("n/a\n");
         }
         if (domain.items[domain.top - 1] == 'z')
         {
