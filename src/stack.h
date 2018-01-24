@@ -1,10 +1,9 @@
-#include "list.h"
-
 #ifndef STACK_H
 #define STACK_H
 
 #define STACK_SIZE 16
 
+typedef char item_t;
 typedef struct stack stack_t;
 
 struct stack
