@@ -6,26 +6,40 @@
 
 #include "domain.h"
 
+static char * strjoin(const char *s[], int count, const char *sep)
+{
+    size_t size = 0;
+    for (int i = 0; i < count; i++)
+    {
+        size += strlen(s[i]);
+    }
+    char *joined = calloc(size + 1, sizeof(char));
+    if (joined == NULL)
+    {
+        return NULL;
+    }
+    const char *tmp_sep = "";
+    for (int i = 0; i < count; i++)
+    {
+        strcat(joined, tmp_sep);
+        strcat(joined, s[i]);
+        tmp_sep = sep;
+    }
+    return joined;
+}
+
 static char * full_url(const char *domain, const char *tld, bool secure)
 {
-    size_t domain_length = strlen(domain);
-    size_t tld_length = strlen(tld);
     const char *prfx = "http://";
     if (secure)
     {
         prfx = "https://";
     }
-    size_t prfx_length = strlen(prfx);
-    char *url = calloc(prfx_length + domain_length + tld_length + 1, sizeof(char));
-    if (url == NULL)
-    {
-        return NULL;
-    }
-    strcat(url, prfx);
-    strcat(url, domain);
-    strcat(url, ".");
-    strcat(url, tld);
-    return url;
+    const char *s[3];
+    s[0] = prfx;
+    s[1] = domain;
+    s[2] = tld;
+    return strjoin(s, 3, "");
 }
 
 int domain_available(CURL *curl, const char *domain, const char *tld)
@@ -33,6 +47,7 @@ int domain_available(CURL *curl, const char *domain, const char *tld)
     char *url = full_url(domain, tld, false);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     CURLcode res = curl_easy_perform(curl);
+    curl_easy_reset(curl);
     free(url);
     if (res == CURLE_OK)
     {
@@ -41,6 +56,7 @@ int domain_available(CURL *curl, const char *domain, const char *tld)
     url = full_url(domain, tld, true);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     res = curl_easy_perform(curl);
+    curl_easy_reset(curl);
     free(url);
     if (res == CURLE_OK)
     {
