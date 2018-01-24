@@ -20,6 +20,9 @@ int stack_pop(stack_t *s, item_t *value)
         return 1;
     }
     s->top--;
-    *value = s->items[s->top];
+    if (value != NULL)
+    {
+        *value = s->items[s->top];
+    }
     return 0;
 }
