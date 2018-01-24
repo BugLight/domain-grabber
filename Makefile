@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -std=c11 -Wall -ggdb -lcurl
+CFLAGS := -std=gnu11 -Wall -ggdb -lcurl
 
 LDFLAGS := -lcurl
 
