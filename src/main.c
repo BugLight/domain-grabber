@@ -103,13 +103,16 @@ int main(int argc, char **argv)
             stack_pop(&domain, NULL);
             domain.items[domain.top - 1]++;  // next letter
         }
-        if (domain.top == LENGTH)
-        {
-            domain.items[domain.top - 1]++;
-        }
         else
         {
-            stack_push(&domain, 'a');
+            if (domain.top == LENGTH)
+            {
+                domain.items[domain.top - 1]++;
+            }
+            else
+            {
+                stack_push(&domain, 'a');
+            }
         }
     }
     curl_easy_cleanup(curl);
