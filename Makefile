@@ -1,15 +1,17 @@
 CC := gcc
-CFLAGS := -std=c11 -Wall -ggdb
+CFLAGS := -std=c11 -Wall -ggdb -lcurl
 
 LDFLAGS := -lcurl
 
-SOURCES := $(wildcard *.c)
+SRC_DIR = ./src
+
+SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(SOURCES:%.c=%.o)
 
 dgrabber: $(OBJECTS)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f dgrabber *.out *.o
+	rm -f dgrabber *.out **/*.o *.o
 
 .PHONY: all clean
