@@ -35,11 +35,12 @@ static char * full_url(const char *domain, const char *tld, bool secure)
     {
         prfx = "https://";
     }
-    const char *s[3];
+    const char *s[4];
     s[0] = prfx;
     s[1] = domain;
-    s[2] = tld;
-    return strjoin(s, 3, "");
+    s[2] = ".";
+    s[3] = tld;
+    return strjoin(s, 4, "");
 }
 
 int domain_available(CURL *curl, const char *domain, const char *tld)
@@ -47,7 +48,6 @@ int domain_available(CURL *curl, const char *domain, const char *tld)
     char *url = full_url(domain, tld, false);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     CURLcode res = curl_easy_perform(curl);
-    curl_easy_reset(curl);
     free(url);
     if (res == CURLE_OK)
     {
@@ -56,7 +56,6 @@ int domain_available(CURL *curl, const char *domain, const char *tld)
     url = full_url(domain, tld, true);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     res = curl_easy_perform(curl);
-    curl_easy_reset(curl);
     free(url);
     if (res == CURLE_OK)
     {
