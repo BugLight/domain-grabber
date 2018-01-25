@@ -26,13 +26,15 @@ int main(int argc, char **argv)
     const char *help = "Usage: dgrabber [options...]\n"
                        "Options:\n"
                        "-o  Output path\n"
+                       "-d  Dictionary path\n"
                        "-v  Verbose output\n"
                        "-h  This help text\n";
     char *output_path = NULL;
+    char *dict_path = NULL;
     bool verbose = false;
 
     char c;
-    const char *optstring = ":o:hv";
+    const char *optstring = ":o:d:hv";
     while ((c = getopt(argc, argv, optstring)) != -1)
     {
         switch (c)
@@ -40,30 +42,58 @@ int main(int argc, char **argv)
             case 'o':
                 output_path = strdup(optarg);
                 break;
+            case 'd':
+                dict_path = strdup(optarg);
+                break;
             case 'v':
                 verbose = true;
                 break;
             case 'h':
                 puts(help);
+                free(output_path);
+                free(dict_path);
                 return 0;
             case ':':
                 ERROR("Missing argument for -%c\n", optopt);
+                free(output_path);
+                free(dict_path);
                 return EARG;
             case '?':
                 ERROR("Unknown option -%c\n", optopt);
+                free(output_path);
+                free(dict_path);
                 return EOPT;
         }
     }
-    if (output_path == NULL)
+    FILE *fdict = NULL;
+    FILE *fout = NULL;
+
+    if (output_path == NULL)  // Output path is required
     {
         ERROR("Output path is required!\n");
+        free(dict_path);
         return EOUTPUT;
     }
-    FILE *fout = fopen(output_path, "w");
+    if (dict_path != NULL)  // If dictionary path is set
+    {
+        fdict = fopen(dict_path, "r");
+        free(dict_path);
+        if (fdict == NULL)
+        {
+            ERROR("Failed to open dictionary file.\n");
+            free(output_path);
+            return EFILEOPEN;
+        }
+    }
+    fout = fopen(output_path, "w");
     free(output_path);
     if (fout == NULL)
     {
         ERROR("Failed to open output file.\n");
+        if (fdict != NULL)
+        {
+            fclose(fdict);
+        }
         return EFILEOPEN;
     }
     CURL *curl = curl_easy_init();
@@ -71,47 +101,84 @@ int main(int argc, char **argv)
     {
         ERROR("Failed to init curl.\n");
         fclose(fout);
+        if (fdict != NULL)
+        {
+            fclose(fdict);
+        }
         return EINIT;
     }
-    // Stack of letters
-    stack_t domain = STACK_INIT();
-    // Fill the stack
-    for (int i = 0; i < LENGTH; i++)
+    curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);  // Disabling body output
+    if (fdict != NULL)
     {
-        stack_push(&domain, 'a');
-    }
-    while (domain.top != 0)
-    {
-        if (verbose)
+        // Use dictionary
+        while (!feof(fdict))
         {
-            printf("Pending %s.%s...\t", domain.items, TLD);
-        }
-        if (domain_available(curl, domain.items, TLD))
-        {
-            fprintf(fout, "%s\n", domain.items);
-            if (verbose)
+            char buffer[128];
+            if (fscanf(fdict, "%s", buffer) == 1)
             {
-                printf("available\n");
+                if (verbose)
+                {
+                    printf("Pending %s.%s...\t",buffer, TLD);
+                }
+                if (domain_available(curl, buffer, TLD))
+                {
+                    fprintf(fout, "%s\n", buffer);
+                    if (verbose)
+                    {
+                        printf("available\n");
+                    }
+                }
+                else if (verbose)
+                {
+                    printf("n/a\n");
+                }
             }
         }
-        else if (verbose)
+        fclose(fdict);
+    }
+    else
+    {
+        // Use brute-force
+        // Stack of letters
+        stack_t domain = STACK_INIT();
+        // Fill the stack
+        for (int i = 0; i < LENGTH; i++)
         {
-            printf("n/a\n");
+            stack_push(&domain, 'a');
         }
-        if (domain.items[domain.top - 1] == 'z')
+        while (domain.top != 0)
         {
-            stack_pop(&domain, NULL);
-            domain.items[domain.top - 1]++;  // next letter
-        }
-        else
-        {
-            if (domain.top == LENGTH)
+            if (verbose)
             {
-                domain.items[domain.top - 1]++;
+                printf("Pending %s.%s...\t", domain.items, TLD);
+            }
+            if (domain_available(curl, domain.items, TLD))
+            {
+                fprintf(fout, "%s\n", domain.items);
+                if (verbose)
+                {
+                    printf("available\n");
+                }
+            }
+            else if (verbose)
+            {
+                printf("n/a\n");
+            }
+            if (domain.items[domain.top - 1] == 'z')
+            {
+                stack_pop(&domain, NULL);
+                domain.items[domain.top - 1]++;  // next letter
             }
             else
             {
-                stack_push(&domain, 'a');
+                if (domain.top == LENGTH)
+                {
+                    domain.items[domain.top - 1]++;
+                }
+                else
+                {
+                    stack_push(&domain, 'a');
+                }
             }
         }
     }
