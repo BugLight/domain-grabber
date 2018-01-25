@@ -6,4 +6,7 @@ It is a simple brute-force utility intended to obtain domain names list.
 * ISO C11 compiler
 
 ## Build
-Just run `make dgrabber` in project directory.
+Follow this simple steps:
+1. Use `autoconf` to produce configure script
+2. `./configure`
+3. `make`

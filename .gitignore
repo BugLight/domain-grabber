@@ -1,3 +1,12 @@
+# Executables
 dgrabber
 *.o
 *.out
+
+# Log files
+*.log
+
+# Autoconf
+config.status
+configure
+Makefile

@@ -1,15 +1,17 @@
-CC := gcc
-CFLAGS := -std=gnu11 -Wall -ggdb -lcurl
+CC = @CC@
+CFLAGS = -std=gnu11 -Wall
 
-LDFLAGS := -lcurl
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 
 SRC_DIR = ./src
 
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(SOURCES:%.c=%.o)
 
+all: dgrabber
 dgrabber: $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -f dgrabber *.out **/*.o *.o
